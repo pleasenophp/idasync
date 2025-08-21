@@ -163,6 +163,33 @@ async function testDeleteExclusions() {
   }
 }
 
+async function testNonExistentSource() {
+  console.log('Testing non-existent source directory...');
+  
+  const sourceDir = path.join(__dirname, 'tmp', 'nonexistent-source');
+  const destDir = await createTempDir();
+  
+  try {
+    // Create a file in destination to verify nothing gets deleted
+    await createTestFile(path.join(destDir, 'existing.txt'), 'should stay');
+    
+    const sync = new IdaSync({ verbose: true });
+    const result = await sync.sync(sourceDir, destDir);
+    
+    // Verify no operations were performed
+    const existingFileStillThere = await fileExists(path.join(destDir, 'existing.txt'));
+    
+    if (existingFileStillThere && result.copied === 0 && result.deleted === 0 && result.skipped === 0) {
+      console.log('✓ Non-existent source test passed');
+    } else {
+      throw new Error('Non-existent source test failed');
+    }
+  } finally {
+    await cleanup(destDir);
+    // Note: sourceDir doesn't exist, so no cleanup needed
+  }
+}
+
 // Run all tests
 async function runTests() {
   console.log('Running idasync tests...\n');
@@ -172,6 +199,7 @@ async function runTests() {
     await testDeletion();
     await testCopyExclusions();
     await testDeleteExclusions();
+    await testNonExistentSource();
     
     console.log('\n✓ All tests passed!');
   } catch (error) {

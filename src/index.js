@@ -147,7 +147,8 @@ class IdaSync {
     try {
       await fs.access(sourceAbs);
     } catch (error) {
-      throw new Error(`Source directory does not exist: ${sourceAbs}`);
+      console.warn(`Source directory does not exist: ${sourceAbs}`);
+      return {copied: 0, deleted: 0, skipped: 0};
     }
     
     // Create destination if it doesn't exist
