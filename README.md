@@ -110,23 +110,23 @@ npm run sync-assets
 ## Programmatic Usage
 
 ```javascript
-const IdaSync = require('idasync');
+const IdaSync = require("idasync");
 
 const sync = new IdaSync({
-  copyExclusions: ['*.log', 'node_modules/*', '*.tmp'],
-  deleteExclusions: ['config.json', '.env*', 'uploads/*'],
-  verbose: true
+  copyExclusions: ["*.log", "node_modules/*", "*.tmp"],
+  deleteExclusions: ["config.json", ".env*", "uploads/*"],
+  verbose: true,
 });
 
 async function syncFolders() {
   try {
-    const result = await sync.sync('./source', './destination');
+    const result = await sync.sync("./source", "./destination");
     console.log(`Sync complete!`);
     console.log(`Files copied: ${result.copied}`);
     console.log(`Files deleted: ${result.deleted}`);
     console.log(`Files skipped: ${result.skipped}`);
   } catch (error) {
-    console.error('Sync failed:', error.message);
+    console.error("Sync failed:", error.message);
     process.exit(1);
   }
 }
@@ -137,7 +137,7 @@ syncFolders();
 ## Use Cases
 
 - **Asset Pipeline**: Sync processed assets to distribution folder
-- **Static Site Generation**: Copy static files while preserving build outputs  
+- **Static Site Generation**: Copy static files while preserving build outputs
 - **Docker Builds**: Sync application files while excluding development dependencies
 - **Deployment Scripts**: Deploy built applications while preserving server configs
 - **Development Workflows**: Keep multiple environments in sync during development
@@ -155,15 +155,15 @@ Exclusion patterns support wildcards:
 ### Pattern Examples
 
 - `*.log` - Excludes all `.log` files
-- `temp/*` - Excludes all files in `temp` directories
-- `node_modules/*` - Excludes all files in `node_modules` directories
+- `temp/*` - Excludes all files recursively in `temp` directories
+- `node_modules/*` - Excludes all files recursively in `node_modules` directories
 - `config.json` - Excludes specific file named `config.json`
 - `*.tmp` - Excludes all temporary files
 
 ## How It Works
 
 1. **File Discovery**: Recursively scans both source and destination directories
-2. **Copy Phase**: 
+2. **Copy Phase**:
    - Compares files between source and destination
    - Copies files that are new or have different modification times/sizes
    - Skips files matching copy exclusion patterns
@@ -177,10 +177,11 @@ Exclusion patterns support wildcards:
 ### Constructor
 
 ```javascript
-new IdaSync(options)
+new IdaSync(options);
 ```
 
 Options:
+
 - `copyExclusions` (Array): Patterns for files to exclude from copying
 - `deleteExclusions` (Array): Patterns for files to exclude from deletion
 - `verbose` (Boolean): Enable verbose logging
@@ -192,6 +193,7 @@ Options:
 Synchronizes the source directory to the destination directory.
 
 Returns a Promise that resolves to:
+
 ```javascript
 {
   copied: number,    // Number of files copied
