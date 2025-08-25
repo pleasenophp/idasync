@@ -103,7 +103,8 @@ async function testCopyExclusions() {
     await createTestFile(path.join(sourceDir, 'include.txt'), 'include');
     await createTestFile(path.join(sourceDir, 'exclude.log'), 'exclude');
     await createTestFile(path.join(sourceDir, 'temp', 'exclude.tmp'), 'exclude');
-    
+    await createTestFile(path.join(sourceDir, 'temp', 'sub', 'exclude.tmp'), 'exclude2');
+
     const sync = new IdaSync({ 
       copyExclusions: ['*.log', 'temp/*'],
       verbose: true 
@@ -114,10 +115,12 @@ async function testCopyExclusions() {
     const includeExists = await fileExists(path.join(destDir, 'include.txt'));
     const excludeLogExists = await fileExists(path.join(destDir, 'exclude.log'));
     const excludeTmpExists = await fileExists(path.join(destDir, 'temp', 'exclude.tmp'));
-    
-    if (includeExists && !excludeLogExists && !excludeTmpExists && result.copied === 1 && result.skipped === 2) {
+    const excludeTmpSubExists = await fileExists(path.join(destDir, 'temp', 'sub', 'exclude.tmp'));
+
+    if (includeExists && !excludeLogExists && !excludeTmpExists && !excludeTmpSubExists && result.copied === 1 && result.skipped === 3) {
       console.log('✓ Copy exclusions test passed');
     } else {
+      console.log({ includeExists, excludeLogExists, excludeTmpExists, excludeTmpSubExists, result });
       throw new Error('Copy exclusions test failed');
     }
   } finally {
@@ -139,10 +142,12 @@ async function testDeleteExclusions() {
     // Create files in destination
     await createTestFile(path.join(destDir, 'keep.txt'), 'keep');
     await createTestFile(path.join(destDir, 'config.json'), 'config');
+    await createTestFile(path.join(destDir, "sub1", 'config1.json'), 'config1');
+    await createTestFile(path.join(destDir, "sub1", "sub2", 'config2.json'), 'config2');
     await createTestFile(path.join(destDir, 'delete.txt'), 'delete');
     
     const sync = new IdaSync({ 
-      deleteExclusions: ['config.json'],
+      deleteExclusions: ['config.json', "sub1/*"],
       verbose: true 
     });
     const result = await sync.sync(sourceDir, destDir);
@@ -150,11 +155,14 @@ async function testDeleteExclusions() {
     // Verify config was preserved, delete.txt was removed
     const keepExists = await fileExists(path.join(destDir, 'keep.txt'));
     const configExists = await fileExists(path.join(destDir, 'config.json'));
+    const config1Exists = await fileExists(path.join(destDir, 'sub1', 'config1.json'));
+    const config2Exists = await fileExists(path.join(destDir, 'sub1', 'sub2', 'config2.json'));
     const deleteExists = await fileExists(path.join(destDir, 'delete.txt'));
-    
-    if (keepExists && configExists && !deleteExists && result.deleted === 1) {
+
+    if (keepExists && configExists && config1Exists && config2Exists && !deleteExists && result.deleted === 1) {
       console.log('✓ Delete exclusions test passed');
     } else {
+      console.log({ keepExists, configExists, config1Exists, config2Exists, deleteExists, result });
       throw new Error('Delete exclusions test failed');
     }
   } finally {

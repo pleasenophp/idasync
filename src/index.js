@@ -32,14 +32,27 @@ class IdaSync {
     const normalizedPath = filePath.replace(/\\/g, '/'); // Normalize path separators
     
     return patterns.some(pattern => {
-      // Convert glob-like pattern to regex
-      const regexPattern = pattern
-        .replace(/\\/g, '/') // Normalize pattern separators
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '[^/]*') // * matches any characters except path separator
-        .replace(/\?/g, '[^/]'); // ? matches single character except path separator
+      const normalizedPattern = pattern.replace(/\\/g, '/'); // Normalize pattern separators
       
-      const regex = new RegExp(`^${regexPattern}$`, 'i');
+      // Helper function to convert glob pattern to regex
+      const escapePattern = (pat) => pat
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '[^/]*')
+        .replace(/\?/g, '[^/]');
+      
+      let regexPattern;
+      if (normalizedPattern.endsWith('/*')) {
+        // Special case for directory patterns ending with /*
+        // This should match everything recursively under that directory
+        // e.g., "temp/*" matches "temp/file.txt", "temp/sub/file.txt", etc.
+        const dirPattern = normalizedPattern.slice(0, -2); // Remove /*
+        regexPattern = `^${escapePattern(dirPattern)}(/.*)?$`; // Match the directory and anything under it
+      } else {
+        // Regular pattern handling
+        regexPattern = `^${escapePattern(normalizedPattern)}$`;
+      }
+      
+      const regex = new RegExp(regexPattern, 'i');
       
       // For patterns with /, match against full path; otherwise match filename only
       if (pattern.includes('/')) {
