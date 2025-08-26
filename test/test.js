@@ -32,14 +32,36 @@ async function cleanup(dir) {
   }
 }
 
-// Test functions
-async function testBasicSync() {
-  console.log('Testing basic sync...');
-  
-  const sourceDir = await createTempDir();
-  const destDir = await createTempDir();
-  
-  try {
+describe('IdaSync', () => {
+  let tempDirs;
+
+  // Initialize temp directories array before each test
+  beforeEach(() => {
+    tempDirs = [];
+  });
+
+  // Helper to track temp directories for cleanup
+  async function createTempDirTracked() {
+    const dir = await createTempDir();
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  // Clean up all temp directories after each test
+  afterEach(async () => {
+    await Promise.all(tempDirs.map(dir => cleanup(dir)));
+  });
+
+  // Cleanup temp directory after all tests
+  afterAll(async () => {
+    const tmpDir = path.join(__dirname, 'tmp');
+    await cleanup(tmpDir);
+  });
+
+  test('should perform basic sync', async () => {
+    const sourceDir = await createTempDirTracked();
+    const destDir = await createTempDirTracked();
+    
     // Create test files in source
     await createTestFile(path.join(sourceDir, 'file1.txt'), 'content1');
     await createTestFile(path.join(sourceDir, 'subdir', 'file2.txt'), 'content2');
@@ -51,24 +73,15 @@ async function testBasicSync() {
     const file1Exists = await fileExists(path.join(destDir, 'file1.txt'));
     const file2Exists = await fileExists(path.join(destDir, 'subdir', 'file2.txt'));
     
-    if (file1Exists && file2Exists && result.copied === 2) {
-      console.log('✓ Basic sync test passed');
-    } else {
-      throw new Error('Basic sync test failed');
-    }
-  } finally {
-    await cleanup(sourceDir);
-    await cleanup(destDir);
-  }
-}
+    expect(file1Exists).toBe(true);
+    expect(file2Exists).toBe(true);
+    expect(result.copied).toBe(2);
+  });
 
-async function testDeletion() {
-  console.log('Testing file deletion...');
-  
-  const sourceDir = await createTempDir();
-  const destDir = await createTempDir();
-  
-  try {
+  test('should delete files not in source', async () => {
+    const sourceDir = await createTempDirTracked();
+    const destDir = await createTempDirTracked();
+    
     // Create files in both directories
     await createTestFile(path.join(sourceDir, 'keep.txt'), 'keep this');
     await createTestFile(path.join(destDir, 'keep.txt'), 'keep this');
@@ -81,24 +94,15 @@ async function testDeletion() {
     const keepExists = await fileExists(path.join(destDir, 'keep.txt'));
     const deleteExists = await fileExists(path.join(destDir, 'delete.txt'));
     
-    if (keepExists && !deleteExists && result.deleted === 1) {
-      console.log('✓ Deletion test passed');
-    } else {
-      throw new Error('Deletion test failed');
-    }
-  } finally {
-    await cleanup(sourceDir);
-    await cleanup(destDir);
-  }
-}
+    expect(keepExists).toBe(true);
+    expect(deleteExists).toBe(false);
+    expect(result.deleted).toBe(1);
+  });
 
-async function testCopyExclusions() {
-  console.log('Testing copy exclusions...');
-  
-  const sourceDir = await createTempDir();
-  const destDir = await createTempDir();
-  
-  try {
+  test('should respect copy exclusions', async () => {
+    const sourceDir = await createTempDirTracked();
+    const destDir = await createTempDirTracked();
+    
     // Create test files
     await createTestFile(path.join(sourceDir, 'include.txt'), 'include');
     await createTestFile(path.join(sourceDir, 'exclude.log'), 'exclude');
@@ -117,37 +121,30 @@ async function testCopyExclusions() {
     const excludeTmpExists = await fileExists(path.join(destDir, 'temp', 'exclude.tmp'));
     const excludeTmpSubExists = await fileExists(path.join(destDir, 'temp', 'sub', 'exclude.tmp'));
 
-    if (includeExists && !excludeLogExists && !excludeTmpExists && !excludeTmpSubExists && result.copied === 1 && result.skipped === 3) {
-      console.log('✓ Copy exclusions test passed');
-    } else {
-      console.log({ includeExists, excludeLogExists, excludeTmpExists, excludeTmpSubExists, result });
-      throw new Error('Copy exclusions test failed');
-    }
-  } finally {
-    await cleanup(sourceDir);
-    await cleanup(destDir);
-  }
-}
+    expect(includeExists).toBe(true);
+    expect(excludeLogExists).toBe(false);
+    expect(excludeTmpExists).toBe(false);
+    expect(excludeTmpSubExists).toBe(false);
+    expect(result.copied).toBe(1);
+    expect(result.skipped).toBe(3);
+  });
 
-async function testDeleteExclusions() {
-  console.log('Testing delete exclusions...');
-  
-  const sourceDir = await createTempDir();
-  const destDir = await createTempDir();
-  
-  try {
+  test('should respect delete exclusions', async () => {
+    const sourceDir = await createTempDirTracked();
+    const destDir = await createTempDirTracked();
+    
     // Create files in source
     await createTestFile(path.join(sourceDir, 'keep.txt'), 'keep');
     
     // Create files in destination
     await createTestFile(path.join(destDir, 'keep.txt'), 'keep');
     await createTestFile(path.join(destDir, 'config.json'), 'config');
-    await createTestFile(path.join(destDir, "sub1", 'config1.json'), 'config1');
-    await createTestFile(path.join(destDir, "sub1", "sub2", 'config2.json'), 'config2');
+    await createTestFile(path.join(destDir, 'sub1', 'config1.json'), 'config1');
+    await createTestFile(path.join(destDir, 'sub1', 'sub2', 'config2.json'), 'config2');
     await createTestFile(path.join(destDir, 'delete.txt'), 'delete');
     
     const sync = new IdaSync({ 
-      deleteExclusions: ['config.json', "sub1/*"],
+      deleteExclusions: ['config.json', 'sub1/*'],
       verbose: true 
     });
     const result = await sync.sync(sourceDir, destDir);
@@ -159,25 +156,18 @@ async function testDeleteExclusions() {
     const config2Exists = await fileExists(path.join(destDir, 'sub1', 'sub2', 'config2.json'));
     const deleteExists = await fileExists(path.join(destDir, 'delete.txt'));
 
-    if (keepExists && configExists && config1Exists && config2Exists && !deleteExists && result.deleted === 1) {
-      console.log('✓ Delete exclusions test passed');
-    } else {
-      console.log({ keepExists, configExists, config1Exists, config2Exists, deleteExists, result });
-      throw new Error('Delete exclusions test failed');
-    }
-  } finally {
-    await cleanup(sourceDir);
-    await cleanup(destDir);
-  }
-}
+    expect(keepExists).toBe(true);
+    expect(configExists).toBe(true);
+    expect(config1Exists).toBe(true);
+    expect(config2Exists).toBe(true);
+    expect(deleteExists).toBe(false);
+    expect(result.deleted).toBe(1);
+  });
 
-async function testNonExistentSource() {
-  console.log('Testing non-existent source directory...');
-  
-  const sourceDir = path.join(__dirname, 'tmp', 'nonexistent-source');
-  const destDir = await createTempDir();
-  
-  try {
+  test('should handle non-existent source directory', async () => {
+    const sourceDir = path.join(__dirname, 'tmp', 'nonexistent-source');
+    const destDir = await createTempDirTracked();
+    
     // Create a file in destination to verify nothing gets deleted
     await createTestFile(path.join(destDir, 'existing.txt'), 'should stay');
     
@@ -187,37 +177,9 @@ async function testNonExistentSource() {
     // Verify no operations were performed
     const existingFileStillThere = await fileExists(path.join(destDir, 'existing.txt'));
     
-    if (existingFileStillThere && result.copied === 0 && result.deleted === 0 && result.skipped === 0) {
-      console.log('✓ Non-existent source test passed');
-    } else {
-      throw new Error('Non-existent source test failed');
-    }
-  } finally {
-    await cleanup(destDir);
-    // Note: sourceDir doesn't exist, so no cleanup needed
-  }
-}
-
-// Run all tests
-async function runTests() {
-  console.log('Running idasync tests...\n');
-  
-  try {
-    await testBasicSync();
-    await testDeletion();
-    await testCopyExclusions();
-    await testDeleteExclusions();
-    await testNonExistentSource();
-    
-    console.log('\n✓ All tests passed!');
-  } catch (error) {
-    console.error(`\n✗ Test failed: ${error.message}`);
-    process.exit(1);
-  } finally {
-    // Cleanup temp directory
-    const tmpDir = path.join(__dirname, 'tmp');
-    await cleanup(tmpDir);
-  }
-}
-
-runTests();
+    expect(existingFileStillThere).toBe(true);
+    expect(result.copied).toBe(0);
+    expect(result.deleted).toBe(0);
+    expect(result.skipped).toBe(0);
+  });
+});

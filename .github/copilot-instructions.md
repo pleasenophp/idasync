@@ -30,10 +30,15 @@ This is a cross-platform folder synchronization npm package similar to rsync, wr
 - Cross-platform compatibility
 - CLI and programmatic interfaces
 
+## Testing
+- Tests are written using Jest framework
+- Run tests with `npm test`
+- All tests pass and provide comprehensive coverage
+
 ## Project Structure
 - `src/` - Source code
 - `lib/` - Built code
 - `bin/` - CLI executable
-- `test/` - Test suite
+- `test/` - Jest test suite
 - `package.json` - Package configuration
 - `README.md` - Documentation

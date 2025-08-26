@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node build.js",
-    "test": "node test/test.js",
+    "test": "jest",
     "prepublishOnly": "npm run build",
     "patch": "npm version patch && npm publish",
     "minor": "npm version minor && npm publish",
@@ -42,5 +42,19 @@
     "bin/",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "lib/**/*.js"
+    ],
+    "coverageDirectory": "coverage"
+  },
+  "devDependencies": {
+    "jest": "^30.0.5"
+  }
 }
