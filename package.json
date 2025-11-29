@@ -13,9 +13,10 @@
     "build": "node build.js",
     "test": "jest",
     "prepublishOnly": "npm run build",
-    "patch": "npm version patch && npm publish",
-    "minor": "npm version minor && npm publish",
-    "major": "npm version major && npm publish"
+    "patch": "npm test && npm version patch && npm publish",
+    "minor": "npm test && npm version minor && npm publish",
+    "major": "npm test && npm version major && npm publish",
+    "push": "git push --follow-tags"
   },
   "keywords": [
     "sync",
