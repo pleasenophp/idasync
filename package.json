@@ -1,10 +1,13 @@
 {
-  "name": "idasync",
+  "name": "@idajs/sync",
   "version": "1.0.3",
   "description": "A simple cross-platform left-to-right folder synchronization utility, written in pure JavaScript. Supports copy and delete exclusions.",
   "main": "lib/index.js",
   "bin": {
     "idasync": "bin/idasync.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "node build.js",
